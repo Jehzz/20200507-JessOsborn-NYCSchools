@@ -10,6 +10,7 @@ import androidx.lifecycle.ViewModel;
 
 import com.example.a20200507_jessosborn_nycschools.model.data.SchoolSATData;
 import com.example.a20200507_jessosborn_nycschools.model.network.Network;
+import com.example.a20200507_jessosborn_nycschools.model.repository.Repository;
 
 import org.jetbrains.annotations.NotNull;
 
@@ -26,44 +27,18 @@ public class SchoolViewModel extends ViewModel implements Filterable {
 
     private String TAG = "SchoolViewModel";
 
-    //TODO: Move responsibility for fetching and storing school's data to a proper Repository class
-    private MutableLiveData<List<SchoolSATData>> listOfSchools;
-    private MutableLiveData<String> errorMessage = new MutableLiveData<>();
+    private Repository schoolRepository = new Repository();
 
+    //Get data from Repo. Repo automatically fetches over network since it is not stored yet
+    public LiveData<List<SchoolSATData>> getListOfSchools() {
+        return schoolRepository.getListOfSchools();
+    }
+
+    private MutableLiveData<String> errorMessage = new MutableLiveData<>();
     public LiveData<String> getError() {
         return errorMessage;
     }
 
-    public LiveData<List<SchoolSATData>> getListOfSchools() {
-        if (listOfSchools == null) {
-            listOfSchools = new MutableLiveData<>();//School's SAT data will not change during a user's session
-            loadSchoolsFromAPI();                   // so it only needs to be loaded once
-        }
-        return listOfSchools;
-    }
-
-    private void loadSchoolsFromAPI() {
-        Network network = new Network(BASEURL);
-        Objects.requireNonNull(network.initRetrofit().getSchoolsList())
-                .enqueue(new Callback<List<SchoolSATData>>() {
-                    @Override
-                    public void onResponse(@NotNull Call<List<SchoolSATData>> call, @NotNull Response<List<SchoolSATData>> response) {
-                        Log.d(TAG, "onResponse: ");
-                        if (response.isSuccessful()) {
-                            listOfSchools.postValue(response.body());
-                        } else {
-                            Log.d(TAG, "Error Message:  " + response.message());
-                            errorMessage.postValue(response.message());
-                        }
-                    }
-
-                    @Override
-                    public void onFailure(@NotNull Call<List<SchoolSATData>> call, @NotNull Throwable t) {
-                        Log.d(TAG, "Error Message:  " + t);
-                        errorMessage.postValue(t.toString());
-                    }
-                });
-    }
 
     @Override
     public Filter getFilter() {
